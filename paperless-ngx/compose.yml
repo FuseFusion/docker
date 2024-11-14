@@ -1,0 +1,81 @@
+services:
+  broker:
+    # labels:
+    # - "nautical-backup.enable=true"
+    # - "nautical-backup.group=paperless-ngx"
+    # - "nautical-backup.override-source-dir=paperless-ngx"
+    # - "nautical-backup.group.paperless.priority=80"
+    image: docker.io/library/redis:7
+    restart: unless-stopped
+    volumes:
+      - /docker-drive/paperless-ngx/redisdata:/data
+
+  db:
+    # labels:
+    # - "nautical-backup.enable=true"
+    # - "nautical-backup.group=paperless-ngx"
+    # - "nautical-backup.override-source-dir=paperless-ngx"
+    # - "nautical-backup.group.paperless.priority=90"
+    image: docker.io/library/postgres:15
+    restart: unless-stopped
+    volumes:
+      - /docker-drive/paperless-ngx/pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  webserver:
+    # labels:
+    # - "nautical-backup.enable=true"
+    # - "nautical-backup.group=paperless-ngx"
+    # - "nautical-backup.override-source-dir=paperless-ngx"
+    # - "nautical-backup.group.paperless.priority=100"
+    image: ghcr.io/paperless-ngx/paperless-ngx:2.13.5
+    restart: unless-stopped
+    depends_on:
+      - db
+      - broker
+      - gotenberg
+      - tika
+    ports:
+      - "9010:8000"
+    volumes:
+      - /docker-drive/paperless-ngx/data:/usr/src/paperless/data
+      - /docker-drive/paperless-ngx/media:/usr/src/paperless/media
+      - /docker-drive/paperless-ngx/export:/usr/src/paperless/export
+      - /docker-drive/samba/paperless/import:/usr/src/paperless/consume
+    environment:
+      USERMAP_UID: 1000
+      USERMAP_GID: 1000
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_DBHOST: db
+      PAPERLESS_TIKA_ENABLED: 1
+      PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://gotenberg:3000
+      PAPERLESS_TIKA_ENDPOINT: http://tika:9998
+      PAPERLESS_CONSUMER_POLLING: 60
+      PAPERLESS_CONSUMER_ENABLE_BARCODES: true
+      PAPERLESS_CONSUMER_ENABLE_ASN_BARCODE: true
+      PAPERLESS_CONSUMER_BARCODE_SCANNER: ZXING
+      PAPERLESS_CONSUMER_BARCODE_UPSCALE: 1.5
+#      PAPERLESS_CONSUMER_BARCODE_DPI: 600
+
+  gotenberg:
+    # labels:
+    # - "nautical-backup.enable=true"
+    # - "nautical-backup.group=paperless"
+    # - "nautical-backup.group.paperless.priority=80"
+    image: docker.io/gotenberg/gotenberg:8.7
+    restart: unless-stopped
+    command:
+      - "gotenberg"
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
+
+  tika:
+    # labels:
+    # - "nautical-backup.enable=true"
+    # - "nautical-backup.group=paperless"
+    # - "nautical-backup.group.paperless.priority=80"
+    image: ghcr.io/paperless-ngx/tika:latest
+    restart: unless-stopped
