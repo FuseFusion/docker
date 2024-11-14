@@ -44,7 +44,7 @@ services:
       - /docker-drive/paperless-ngx/data:/usr/src/paperless/data
       - /docker-drive/paperless-ngx/media:/usr/src/paperless/media
       - /docker-drive/paperless-ngx/export:/usr/src/paperless/export
-      - /docker-drive/samba/paperless/import:/usr/src/paperless/consume
+      - /docker-drive/samba/paperless-import:/usr/src/paperless/consume
     environment:
       USERMAP_UID: 1000
       USERMAP_GID: 1000
