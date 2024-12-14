@@ -6,7 +6,7 @@ services:
     # - "nautical-backup.override-source-dir=mealie"
     # - "nautical-backup.group.paperless.priority=100"
 
-    image: ghcr.io/mealie-recipes/mealie:v1.10.2 # 
+    image: ghcr.io/mealie-recipes/mealie:v2.4.0 # 
 
 
     container_name: mealie
